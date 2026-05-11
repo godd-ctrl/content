@@ -31,6 +31,7 @@ You will create the workspace, configure provider credentials, install the packa
 - Use `sapat ./video.mp4 --api groq` for a single file, or point Sapat at a directory to process all `.mp4` files inside it.
 - Keep `.env` private. Store only `.env.example` in source control.
 - Choose Groq for fast Whisper-style transcription, OpenAI for broad API familiarity, and Azure OpenAI when your organization already standardizes on Azure deployments.
+- Add a small transcript quality gate before handing notes to engineering, support, or product teams.
 
 ## Prerequisites
 
@@ -260,7 +261,89 @@ The best provider depends on your constraints:
 
 If you are writing an internal tool, start with whichever provider your organization already approves. If you are experimenting, run the same short clip through two providers and compare accuracy, punctuation, and cost before committing to a larger batch.
 
-## Step 10: Keep the workflow reproducible
+## Step 10: Add a transcript quality gate
+
+Transcription output is most useful when the team can trust it. Before sharing a transcript as a source of truth, create a short review checklist in the Daytona workspace.
+
+Create a file named `transcripts/quality-checklist.md`:
+
+```markdown
+# Transcript Quality Checklist
+
+- Source file:
+- Provider:
+- Command used:
+- Transcript file:
+- Reviewer:
+- Review date:
+
+## Required checks
+
+- [ ] Speaker names or roles are clear enough for the handoff.
+- [ ] Product names, APIs, and company names are spelled correctly.
+- [ ] Timestamps or section breaks are added for long recordings.
+- [ ] Sensitive information is removed before sharing externally.
+- [ ] Follow-up actions are separated from raw transcript text.
+- [ ] The original media file location is documented.
+```
+
+For product demos, add a short handoff summary above the raw transcript:
+
+```markdown
+# Handoff Summary
+
+## What happened
+
+One paragraph summary of the recording.
+
+## Decisions
+
+- Decision 1
+- Decision 2
+
+## Follow-up tasks
+
+- [ ] Task owner: next action
+- [ ] Task owner: next action
+
+## Open questions
+
+- Question 1
+- Question 2
+```
+
+This step is intentionally separate from Sapat. Sapat creates the transcript; the quality gate turns that transcript into something another engineer can use without replaying the video.
+
+## Step 11: Compare providers with one repeatable clip
+
+If your team has access to more than one provider, run the same short clip through each provider before processing a large folder.
+
+Use commands like these:
+
+```bash
+sapat media/product-demo.mp4 --api openai --quality M --language en
+mv media/product-demo.txt transcripts/product-demo-openai.txt
+
+sapat media/product-demo.mp4 --api groq --quality M --language en
+mv media/product-demo.txt transcripts/product-demo-groq.txt
+
+sapat media/product-demo.mp4 --api azure --quality M --language en
+mv media/product-demo.txt transcripts/product-demo-azure.txt
+```
+
+Then score each transcript:
+
+| Provider | Accuracy | Product terms | Punctuation | Latency | Notes |
+| --- | --- | --- | --- | --- | --- |
+| OpenAI |  |  |  |  |  |
+| Groq |  |  |  |  |  |
+| Azure OpenAI |  |  |  |  |  |
+
+Keep the winning provider and command in your workspace README. That makes later batch work easier to reproduce and gives the team a reason for the provider choice.
+
+One implementation detail matters here: Sapat writes the transcript next to the input file and uses the same basename with a `.txt` extension. Move or rename the transcript after each provider run so the next run does not overwrite the previous result.
+
+## Step 12: Keep the workflow reproducible
 
 Daytona helps most when the setup is not only running today, but also repeatable next week. A good production-ready Sapat workspace should include:
 
